@@ -20,14 +20,19 @@ export default async function handler(req, res) {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
-    const result = await model.generateContent([
-      { role: "user", parts: [{ text: prompt }] }
-    ]);
-    
+    // 👇 هذا هو الشكل الصحيح لمحتوى الطلب
+    const result = await model.generateContent({
+      contents: [
+        {
+          parts: [{ text: prompt }]
+        }
+      ]
+    });
+
     const text = result.response.text();
     res.status(200).json({ text });
 
   } catch (err) {
-    res.status(500).json({ error: err.message || "Unknown error" });
+    res.status(500).json({ error: `[Gemini Error]: ${err.message}` });
   }
 }
