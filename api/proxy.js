@@ -1,27 +1,35 @@
-import axios from "axios";
-
+// api/proxy.js
 export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).end();
-
-  const { prompt } = req.body;
-  if (!prompt) return res.status(400).json({ error: "prompt required" });
-
   const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return res.status(500).json({ error: "API key missing" });
+
+  if (!apiKey) {
+    return res.status(500).json({ error: 'API key not set' });
+  }
+
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Only POST allowed' });
+  }
+
+  const userPrompt = req.body.prompt;
+  if (!userPrompt) {
+    return res.status(400).json({ error: 'prompt required' });
+  }
 
   try {
-    const g = await axios.post(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" + apiKey,
+    const response = await fetch(
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=' + apiKey,
       {
-        contents: [
-          { role: "user", parts: [{ text: prompt + "، رد بطريقة مضحكة 😆" }] }
-        ]
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: userPrompt }] }]
+        })
       }
     );
-    const text = g.data.candidates?.[0]?.content?.parts?.[0]?.text || "لا يوجد رد";
-    res.json({ text });
-  } catch (e) {
-    console.error(e.response?.data || e);
-    res.status(500).json({ error: "API error" });
+
+    const result = await response.json();
+    res.status(200).json({ text: result.candidates?.[0]?.content?.parts?.[0]?.text || '🤖 لا يوجد رد!' });
+  } catch (err) {
+    res.status(500).json({ error: err.toString() });
   }
 }
