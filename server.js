@@ -1,4 +1,3 @@
-// ===== Gemini API Server (متوافق مع Render) =====
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
@@ -7,7 +6,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// مفتاح Gemini من environment variables في Render
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 app.post('/api', async (req, res) => {
@@ -20,7 +18,9 @@ app.post('/api', async (req, res) => {
         contents: [
           {
             role: "user",
-            parts: [{ text: prompt }]
+            parts: [
+              { text: prompt }
+            ]
           }
         ]
       },
@@ -31,17 +31,16 @@ app.post('/api', async (req, res) => {
       }
     );
 
-    // استخراج الرد من النموذج
     const text = response.data.candidates?.[0]?.content?.parts?.[0]?.text || 'رد غير مفهوم';
     res.json({ text });
 
   } catch (err) {
-    console.error("💥 خطأ في API:", err.response?.data || err.message);
+    console.error("❌ خطأ في الاتصال مع Gemini:", err.response?.data || err.message);
     res.status(500).json({ error: err.toString() });
   }
 });
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
-  console.log(`✅ Gemini server شغال على المنفذ ${port}`);
+  console.log(`✅ الخادم يعمل على المنفذ ${port}`);
 });
