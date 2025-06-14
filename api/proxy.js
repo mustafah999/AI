@@ -1,38 +1,27 @@
-// ===== proxy.js =====
-import { GoogleGenerativeAI } from "@google/generative-ai";
+// api/proxy.js
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
+
+const google = createGoogleGenerativeAI({
+  apiKey: process.env.GEMINI_API_KEY
+});
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
+  if (req.method !== "POST")
     return res.status(405).json({ error: "Only POST allowed" });
-  }
-
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return res.status(500).json({ error: "API key not set" });
-  }
 
   const { prompt } = req.body;
-  if (!prompt) {
-    return res.status(400).json({ error: "Prompt required" });
-  }
+  if (!prompt) return res.status(400).json({ error: "Prompt required" });
 
   try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-
-    // 👇 هذا هو الشكل الصحيح لمحتوى الطلب
-    const result = await model.generateContent({
-      contents: [
-        {
-          parts: [{ text: prompt }]
-        }
-      ]
+    const result = await google("gemini-1.5-pro", {
+      prompt: prompt,
+      // نُضيف دي الخيالية علشان يرد دايمًا بطريقة مضحكة
+      system: "أجب بطريقة مضحكة جدًا 😆"
     });
 
-    const text = result.response.text();
-    res.status(200).json({ text });
-
-  } catch (err) {
-    res.status(500).json({ error: `[Gemini Error]: ${err.message}` });
+    return res.status(200).json({ text: result.text });
+  } catch (e) {
+    console.error("Gemini proxy error:", e);
+    return res.status(500).json({ error: e.message || "Unknown error" });
   }
 }
