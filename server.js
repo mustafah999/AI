@@ -3,8 +3,11 @@ const axios = require('axios');
 const cors = require('cors');
 
 const app = express();
-app.use(cors());
+app.use(cors()); // ← هذا يسمح CORS
 app.use(express.json());
+
+// 🔧 هذا السطر مهم لحل مشكلة preflight
+app.options('/api', cors());
 
 const API_KEY = process.env.OPENAI_API_KEY;
 
