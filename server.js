@@ -3,33 +3,35 @@ const axios = require('axios');
 const cors = require('cors');
 
 const app = express();
-app.use(cors()); // ← هذا يسمح CORS
+app.use(cors());
 app.use(express.json());
 
-// 🔧 هذا السطر مهم لحل مشكلة preflight
-app.options('/api', cors());
-
-const API_KEY = process.env.OPENAI_API_KEY;
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 app.post('/api', async (req, res) => {
   try {
+    const prompt = req.body.prompt;
+
     const response = await axios.post(
-      'https://api.openai.com/v1/chat/completions',
-      req.body,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,
       {
-        headers: {
-          'Authorization': `Bearer ${API_KEY}`,
-          'Content-Type': 'application/json'
-        }
+        contents: [
+          {
+            parts: [{ text: prompt }]
+          }
+        ]
       }
     );
-    res.json(response.data);
+
+    const text = response.data.candidates?.[0]?.content?.parts?.[0]?.text || 'رد غير مفهوم';
+    res.json({ text });
   } catch (err) {
+    console.error(err?.response?.data || err.message);
     res.status(500).json({ error: err.toString() });
   }
 });
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
-  console.log(`✅ Server running on port ${port}`);
+  console.log(`✅ Gemini server running on port ${port}`);
 });
